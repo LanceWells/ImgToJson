@@ -28,7 +28,6 @@ namespace ImgToJson.ImageMap
         /// </param>
         public PixelMap(Bitmap bitmap, byte[] bitmapPixelData, int bitmapStride)
         {
-            Dictionary<ARGBFormatColor, int> _colorMap = new Dictionary<ARGBFormatColor, int>();
             ARGBFormatColor[,] pixelMap = new ARGBFormatColor[bitmap.Height, bitmap.Width];
 
             int rowOffset = 0;
@@ -42,12 +41,6 @@ namespace ImgToJson.ImageMap
                     byte r = bitmapPixelData[offset + 2];
                     byte a = bitmapPixelData[offset + 3];
                     ARGBFormatColor color = new ARGBFormatColor(a, r, g, b);
-
-                    if (!_colorMap.ContainsKey(color))
-                    {
-                        int colorIndex = _colorMap.Count;
-                        _colorMap.Add(color, colorIndex);
-                    }
 
                     pixelMap[xIndex, yIndex] = color;
                     offset += 4;
