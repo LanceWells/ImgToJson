@@ -64,7 +64,7 @@ might be changed without need filters or image manipulation.
         /// <param name="args">See the help string for more information.</param>
         public static void Main(string[] args)
         {
-            if (args[0].Trim('-') == "help")
+            if (args.Length == 0 || args[0].Trim('-') == "help")
             {
                 Console.Out.WriteLine(HelpString);
                 return;
