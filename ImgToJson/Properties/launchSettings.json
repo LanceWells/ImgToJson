@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ImgToJson": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Lance\\Documents\\Pixeling\\test.png\""
+    }
+  }
+}
