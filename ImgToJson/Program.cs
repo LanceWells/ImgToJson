@@ -4,7 +4,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using ImgToJson.ImageMap;
-using Newtonsoft.Json;
 
 namespace ConsoleApp2
 {
@@ -54,6 +53,10 @@ corners for a rectangle of the corresponding color that should be drawn.
 Note that the output, in a json file, is about 7x the size of a .png image. This should not be used as a
 low-cost storage format, but it is useful as a means to draw an image on a canvas where specific colors
 might be changed without need filters or image manipulation.
+
+Return Codes:
+    0: No error. Note that this help menu will return '0'.
+    1: The provided file does not exist at the specified path.
             ";
 
         /// <summary>
@@ -62,12 +65,12 @@ might be changed without need filters or image manipulation.
         /// images.
         /// </summary>
         /// <param name="args">See the help string for more information.</param>
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
             if (args.Length == 0 || args[0].Trim('-') == "help")
             {
                 Console.Out.WriteLine(HelpString);
-                return;
+                return 0;
             }
 
             string imgPath = args[0];
@@ -75,7 +78,7 @@ might be changed without need filters or image manipulation.
             if (!File.Exists(imgPath))
             {
                 Console.Out.WriteLine("File does not exist at the provided path.");
-                return;
+                return 1;
             }
 
             using (FileStream imageFile = File.OpenRead(imgPath))
@@ -91,9 +94,11 @@ might be changed without need filters or image manipulation.
                 bitmap.UnlockBits(bitmapData);
 
                 JsonImageOutput output = JsonImageMapper.JsonImageData(bitmap, pixelData, stride);
-                string outputStr = JsonConvert.SerializeObject(output);
-                Console.Out.WriteLine(outputStr);
+                string jsonStr = output.AsJson();
+                Console.Out.WriteLine(jsonStr);
             }
+
+            return 0;
         }
     }
 }

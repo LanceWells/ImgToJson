@@ -9,10 +9,40 @@ namespace ImgToJson.ImageMap
     /// </summary>
     public class PixelMap
     {
+        private Dictionary<PixelIndex, ARGBFormatColor> _pixelStorage = new Dictionary<PixelIndex, ARGBFormatColor>();
+
         /// <summary>
         /// The bitmap information as a 2D array.
         /// </summary>
-        public ARGBFormatColor[,] Pixels;
+        public Dictionary<ARGBFormatColor, List<PixelIndex>> Pixels { get; }
+
+        /// <summary>
+        /// Returns true if the given pixel location contains any of the colors in the provided list.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="colorFilter"></param>
+        /// <returns></returns>
+        public bool PixelIsColor(PixelIndex index, List<ARGBFormatColor> colorFilter)
+        {
+            ARGBFormatColor? color = LookupPixel(index);
+            return color != null && colorFilter.Contains(color.Value);
+        }
+
+        /// <summary>
+        /// Returns the color of the pixel at the provided index. If the pixel is invalid, returns null.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public ARGBFormatColor? LookupPixel(PixelIndex index)
+        {
+            ARGBFormatColor? color = null;
+            if (_pixelStorage.ContainsKey(index))
+            {
+                color = _pixelStorage[index];
+            }
+
+            return color;
+        }
 
         /// <summary>
         /// The constructor for this type.
@@ -28,7 +58,8 @@ namespace ImgToJson.ImageMap
         /// </param>
         public PixelMap(Bitmap bitmap, byte[] bitmapPixelData, int bitmapStride)
         {
-            ARGBFormatColor[,] pixelMap = new ARGBFormatColor[bitmap.Height, bitmap.Width];
+            //ARGBFormatColor[,] pixelMap = new ARGBFormatColor[bitmap.Height, bitmap.Width];
+            var pixelMap = new Dictionary<ARGBFormatColor, List<PixelIndex>>();
 
             int rowOffset = 0;
             for (int yIndex = 0; yIndex < bitmap.Height; yIndex++)
@@ -42,7 +73,16 @@ namespace ImgToJson.ImageMap
                     byte a = bitmapPixelData[offset + 3];
                     ARGBFormatColor color = new ARGBFormatColor(a, r, g, b);
 
-                    pixelMap[xIndex, yIndex] = color;
+                    PixelIndex index = new PixelIndex { XValue = xIndex, YValue = yIndex };
+                    if (!pixelMap.ContainsKey(color))
+                    {
+                        pixelMap.Add(color, new List<PixelIndex>());
+                    }
+
+                    //pixelMap[xIndex, yIndex] = color;
+                    _pixelStorage.Add(index, color);
+                    pixelMap[color].Add(index);
+
                     offset += 4;
                 }
 
@@ -51,5 +91,21 @@ namespace ImgToJson.ImageMap
 
             Pixels = pixelMap;
         }
+    }
+
+    /// <summary>
+    /// A structure used to represent the index of a specific pixel.
+    /// </summary>
+    public struct PixelIndex
+    {
+        /// <summary>
+        /// The x-value in a 2D matrix for this pixel.
+        /// </summary>
+        public int XValue;
+
+        /// <summary>
+        /// The y-value in a 2D matrix for this pixel.
+        /// </summary>
+        public int YValue;
     }
 }

@@ -348,3 +348,6 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# There shouldn't be any build-specific launch settings, just debug options.
+launchSettings.json

@@ -25,32 +25,58 @@ namespace ImgToJson.ImageMap
             // left corner of the rectangle itself. The idea here is that if we find the largest rectangles, a large
             // number of those similarly-colored rectangles will be encompassed by a larger rectangle. The end goal is
             // to have a low number of rectangles required to fully render the image using an HTML canvas element.
-            List<ColorRectangle> rectangles = new List<ColorRectangle>();
-            for (int xCoord = 0; xCoord < pixelMap.Pixels.GetLength(1); xCoord++)
+            var rectanglesByColor = new Dictionary<ARGBFormatColor, List<ColorRectangle>>();
+
+            List<ARGBFormatColor> sortedColors = pixelMap.Pixels
+                .OrderByDescending((r) => r.Value.Count)
+                .Select((r) => r.Key)
+                .ToList();
+
+            Dictionary<ARGBFormatColor, int> colorIndex = new Dictionary<ARGBFormatColor, int>();
+            for (int i = 0; i < sortedColors.Count; i++)
             {
-                for (int yCooord = 0; yCooord < pixelMap.Pixels.GetLength(0); yCooord++)
+                colorIndex.Add(sortedColors[i], i);
+            }
+
+            for (int xCoord = 0; xCoord < bitmap.Width; xCoord++)
+            {
+                for (int yCoord = 0; yCoord < bitmap.Height; yCoord++)
                 {
-                    if (pixelMap.Pixels[xCoord, yCooord].A != 0)
+                    PixelIndex thisPixel = new PixelIndex() { XValue = xCoord, YValue = yCoord };
+                    ARGBFormatColor? thisColor = pixelMap.LookupPixel(thisPixel);
+
+                    List<ARGBFormatColor> availableColors = new List<ARGBFormatColor>();
+                    if (thisColor.HasValue)
                     {
-                        ColorRectangle rectangle = GetLargestRect(pixelMap.Pixels, xCoord, yCooord);
-                        rectangles.Add(rectangle);
+                        availableColors = sortedColors.Skip(colorIndex[thisColor.Value]).ToList();
+
+                        ColorRectangle rectangle = GetLargestRect(
+                            pixelMap,
+                            availableColors,
+                            xCoord,
+                            yCoord,
+                            bitmap.Width,
+                            bitmap.Height
+                        );
+
+                        if (!rectanglesByColor.ContainsKey(thisColor.Value))
+                        {
+                            rectanglesByColor.Add(thisColor.Value, new List<ColorRectangle>());
+                        }
+
+                        rectanglesByColor[thisColor.Value].Add(rectangle);
                     }
                 }
             }
+           
+            JsonImageOutput output = new JsonImageOutput();
 
-            // Now that the rectangles have been measured, trim out any rectangles that are encompassed by another,
-            // larger rectangle.
-            var imageOutput = new Dictionary<ARGBFormatColor, List<int[,]>>();
-
-            Dictionary<ARGBFormatColor, List<ColorRectangle>> rectanglesByColor = rectangles
-                .GroupBy((r) => r.ColorIndex)
-                .ToDictionary((r) => r.Key, (r) => r.ToList());
-
-            foreach (ARGBFormatColor rectangleColor in rectanglesByColor.Keys)
+            foreach(ARGBFormatColor color in sortedColors)
             {
+                List<ColorRectangle> colorRectangles = rectanglesByColor[color];
                 List<ColorRectangle> limitedRectangles = new List<ColorRectangle>();
-                List<ColorRectangle> orderedRectangles = rectanglesByColor[rectangleColor]
-                    .OrderByDescending(r => r.RectangleSize)
+                List<ColorRectangle> orderedRectangles = colorRectangles
+                    .OrderByDescending((r) => r.RectangleSize)
                     .ToList();
 
                 foreach (ColorRectangle rectangle in orderedRectangles)
@@ -63,10 +89,9 @@ namespace ImgToJson.ImageMap
                 }
 
                 List<int[,]> boundaries = limitedRectangles.Select(l => l.RectangleBoundaries).ToList();
-                imageOutput.Add(rectangleColor, boundaries);
+                output.Add(new JsonImageColor(color, boundaries, colorIndex[color]));
             }
 
-            JsonImageOutput output = new JsonImageOutput(imageOutput);
             return output;
         }
 
@@ -84,28 +109,35 @@ namespace ImgToJson.ImageMap
         /// The largest encompasing rectangle of a specific color whose upper-left corner originates at the provided
         /// x/y coordinates.
         /// </returns>
-        private static ColorRectangle GetLargestRect(ARGBFormatColor[,] pixelMap, int xCoord, int yCoord)
+        private static ColorRectangle GetLargestRect(
+            PixelMap pixelMap,
+            List<ARGBFormatColor> availableColors,
+            int xCoord,
+            int yCoord,
+            int width,
+            int height)
         {
-            ARGBFormatColor colorIndex = pixelMap[xCoord, yCoord];
             int maxRect = 1;
-            int farthestColumn = pixelMap.GetLength(0) - 1;
-
+            int farthestColumn = width - 1;
             int[,] largestRectangle = new int[,]
             {
                 { xCoord, yCoord },
                 { xCoord, yCoord },
             };
 
-            for (int rowIndex = yCoord; rowIndex < pixelMap.GetLength(1); rowIndex++)
+            for (int rowIndex = yCoord; rowIndex < height; rowIndex++)
             {
-                if (!pixelMap[xCoord, rowIndex].Equals(colorIndex))
-                {
-                    break;
-                }
                 for (int columnIndex = xCoord; columnIndex <= farthestColumn; columnIndex++)
                 {
-                    ARGBFormatColor targetedColorIndex = pixelMap[columnIndex, rowIndex];
-                    if (colorIndex.Equals(targetedColorIndex))
+                    PixelIndex pixelIndex = new PixelIndex()
+                    {
+                        XValue = columnIndex,
+                        YValue = rowIndex,
+                    };
+
+                    bool pixelAtIndex = pixelMap.PixelIsColor(pixelIndex, availableColors);
+
+                    if (pixelAtIndex)
                     {
                         int rowCount = (rowIndex - yCoord) + 1;
                         int columnCount = (columnIndex - xCoord) + 1;
@@ -126,7 +158,7 @@ namespace ImgToJson.ImageMap
                 }
             }
 
-            return new ColorRectangle(colorIndex, largestRectangle);
+            return new ColorRectangle(availableColors[0], largestRectangle);
         }
     }
 }

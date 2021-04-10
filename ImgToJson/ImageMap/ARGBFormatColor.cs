@@ -66,6 +66,7 @@ namespace ImgToJson.ImageMap
             string bHex = B.ToString("X2");
 
             return $"#{rHex}{gHex}{bHex}{aHex}";
+            //return $"rgba({R},{G},{B},{A})";
         }
 
         /// <summary>
