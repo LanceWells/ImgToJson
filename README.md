@@ -1,5 +1,7 @@
-# Usage
+# About
+ImgToJson is a conversion tool used to translate images into raw JSON. The output JSON is designed to be HTML-Canvas friendly, and organizes the data into rectangle/color tuples. From here, swapping a specific color in an existing image is trivial at runtime in a frontend environment. This is all without the need for filters or for image conversion.
 
+# Usage
 
 ## Options
 * `-help`/`--help`: Show this menu
