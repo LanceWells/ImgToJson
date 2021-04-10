@@ -1,55 +1,75 @@
 ﻿import React, { useEffect, useRef } from 'react';
-import * as testImage from './image2.json';
+import $ from 'jquery';
+import * as rt from 'runtypes';
 
-type testImageTypes = keyof typeof testImage.Colors;
+const ColorMapType = rt.Array(rt.Array(rt.Array(rt.Number)));
+
+const ImageEntry = rt.Record({
+    Rectangles: ColorMapType,
+    DrawIndex: rt.Number,
+});
+
+const ImageLayout = rt.Dictionary(ImageEntry);
 
 const imageScale: number = 4;
 
-function DrawImage(drawContext: CanvasRenderingContext2D, ref: HTMLCanvasElement) {
-  const colors = Object.keys(testImage.Colors);
+type ImageEntryType = rt.Static<typeof ImageEntry>;
+type ImageLayoutType = rt.Static<typeof ImageLayout>;
 
-  drawContext.clearRect(0, 0, ref.width, ref.height);
+function DrawImage(
+    drawContext: CanvasRenderingContext2D,
+    imageMap: ImageLayoutType,
+): void {
+    const entries = Object
+        .entries(imageMap)
+        .sort((a, b) => a[1].DrawIndex - b[1].DrawIndex);
 
-  for (let i = 0; i < colors.length; i++) {
-    const colorText = colors[i];
-    const color = colorText as testImageTypes;
+    for (let i = 0; i < entries.length; i++) {
+        const entry: [string, ImageEntryType] = entries[i];
+        let colorText: string = entry[0];
+        drawContext.fillStyle = colorText;
 
-    const colorIndices = testImage.Colors[color];
-    drawContext.fillStyle = colorText;
+        entry[1].Rectangles.forEach((r) => {
+            const x1 = r[0][0];
+            const x2 = r[1][0];
+            const y1 = r[0][1];
+            const y2 = r[1][1];
 
-    colorIndices.forEach(colorIndex => {
-      const x1 = colorIndex[0][0];
-      const x2 = colorIndex[1][0];
-      const y1 = colorIndex[0][1];
-      const y2 = colorIndex[1][1];
-
-      drawContext.fillRect(
-        x1 * imageScale,
-        y1 * imageScale,
-        (x2 - x1 + 1) * imageScale,
-        (y2 - y1 + 1) * imageScale,
-      );
-    });
-  }
+            drawContext.fillRect(
+                x1 * imageScale,
+                y1 * imageScale,
+                (x2 - x1 + 1) * imageScale,
+                (y2 - y1 + 1) * imageScale,
+            )
+        });
+    }
 }
 
 function PixelCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext('2d');
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext('2d');
 
-    if (context && canvasRef.current) {
-      DrawImage(context, canvasRef.current);
-    }
-  }, [canvasRef]);
+        if (canvas && context) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            $.getJSON('./assets/image4.json')
+                .then((json) => {
 
-  return (
-    <div className="App">
-      <canvas ref={canvasRef} width={256} height={256} />
-    </div>
-  );
+                    if (ImageLayout.guard(json)) {
+                        const jsonDict = json as ImageLayoutType;
+                        DrawImage(context, jsonDict);
+                    }
+                })
+        }
+    }, [canvasRef])
+
+    return (
+        <div className="App">
+            <canvas ref={canvasRef} width={256} height={256} />
+        </div>
+    );
 }
 
 export default PixelCanvas;
