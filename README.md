@@ -13,18 +13,16 @@ ImgToJson is a conversion tool used to translate images into raw JSON. The outpu
 A JSON-format string for the image. The format will be:
 ```
 {
-    Colors:
-    {
-        ""ColorHexValue"":
-        [
+    ""ColorHexValue"": {    // This is the hex value of the color to draw. This is also the key for the record.
+        ""Rectangles"": [
             [
-                [x1, y1],
-                [x2, y2],
-            ],
-            . . .
+                [0, 0],     // Top-left corner of the rectangle.
+                [47, 47]    // Bottom-right corner of the rectangle.
+            ]
         ],
-        . . .
+        ""DrawIndex"": 0    // This index may be safely used to determine color draw-order.
     }
+    . . .
 }
 ```
 
