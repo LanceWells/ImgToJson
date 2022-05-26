@@ -65,6 +65,10 @@ namespace ImgToJson.ImageMap
           var pixel = bitmapPixelData[y * bitmap.Width + x];
           ARGBFormatColor color = new ARGBFormatColor(pixel.A, pixel.R, pixel.G, pixel.B);
 
+          if (color.A == 0) {
+            continue;
+          }
+
           var index = new PixelIndex { X = x, Y = y };
           if (!pixelMap.ContainsKey(color)) {
             pixelMap.Add(color, new List<PixelIndex>());

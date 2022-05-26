@@ -16,7 +16,7 @@ namespace ImgToJson.ImageMap
     /// <param name="bitmap">The raw bitmap data.</param>
     /// <param name="bitmapPixelData">The bitmap pixel data, taken from the lockbits for a bitmap.</param>
     /// <returns></returns>
-    public static JsonImageOutput JsonImageData(Image bitmap, Rgba32[] bitmapPixelData)
+    public static ImageOutput JsonImageData(Image bitmap, Rgba32[] bitmapPixelData)
     {
       // First, get the pixel information as a workable object, rather than a byte array.
       PixelMap pixelMap = new PixelMap(bitmap, bitmapPixelData);
@@ -69,7 +69,7 @@ namespace ImgToJson.ImageMap
         }
       }
 
-      JsonImageOutput output = new JsonImageOutput();
+      ImageOutput output = new ImageOutput();
 
       foreach (ARGBFormatColor color in sortedColors)
       {

@@ -1,13 +1,15 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System;
 
 namespace ImgToJson.ImageMap
 {
   /// <summary>
   /// A JSON-friendly object used to contain image information.
   /// </summary>
-  public class JsonImageOutput
+  public class ImageOutput
   {
     /// <summary>
     /// The color-aware bitmap information for the image.
@@ -18,7 +20,7 @@ namespace ImgToJson.ImageMap
     /// The constructor for this type.
     /// </summary>
     /// <param name="colors">The color information to contain by this class.</param>
-    public JsonImageOutput()
+    public ImageOutput()
     {
       Colors = new List<JsonImageColor>();
     }
@@ -39,11 +41,39 @@ namespace ImgToJson.ImageMap
     public string AsJson()
     {
       Dictionary<string, ColorMapData> colorDict = Colors.ToDictionary(
-          (c) => c.Color.ToString(),
-          (c) => new ColorMapData(c.Rectangles, c.DrawIndex)
+        (c) => c.Color.ToString(),
+        (c) => new ColorMapData(c.Rectangles, c.DrawIndex)
       );
 
       return JsonConvert.SerializeObject(colorDict);
+    }
+
+    /// <summary>
+    /// Returns this object as a string that contains minimal extra characters. This option is used
+    /// to reduce the overall size of the output.
+    /// </summary>
+    public string AsMinText()
+    {
+      Dictionary<string, ColorMapData> colorDict = Colors.ToDictionary(
+        (c) => c.Color.ToString(),
+        (c) => new ColorMapData(c.Rectangles, c.DrawIndex)
+      );
+
+      var builder = new StringBuilder();
+
+      foreach (var kvp in colorDict.OrderBy(kvp => kvp.Value.DrawIndex)) {
+        var rectStrings = kvp.Value.Rectangles.Select(r => {
+          if (r[0,0] == r[1,0] && r[0,1] == r[1,1]) {
+            return $"{r[0,0]},{r[1,1]}";
+          }
+          return $"{r[0,0]},{r[0,1]},{r[1,0]},{r[1,1]}";
+        });
+        
+        var keyWithoutHash = kvp.Key.TrimStart('#');
+        builder.AppendLine($"{keyWithoutHash}:{string.Join("|", rectStrings)}");
+      }
+
+      return builder.ToString();
     }
 
     /// <summary>

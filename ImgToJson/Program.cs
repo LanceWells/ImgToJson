@@ -86,8 +86,11 @@ Return Codes:
         Rgba32[] pixelData = new Rgba32[bitmap.Width * bitmap.Height];
         bitmap.CopyPixelDataTo(pixelData);
 
-        JsonImageOutput output = JsonImageMapper.JsonImageData(bitmap, pixelData);
-        string jsonStr = output.AsJson();
+        ImageOutput output = JsonImageMapper.JsonImageData(bitmap, pixelData);
+        
+        // This should definitely be configurable on input, but I'm pretty sure I'm the only one
+        // using this, and I no longer have any need for JSON output so 🤷‍♂️.
+        string jsonStr = output.AsMinText();
         Console.Out.WriteLine(jsonStr);
       }
 
