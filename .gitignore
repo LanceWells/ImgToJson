@@ -351,3 +351,6 @@ MigrationBackup/
 
 # There shouldn't be any build-specific launch settings, just debug options.
 launchSettings.json
+
+packages-microsoft-prod.deb
+.vscode/
